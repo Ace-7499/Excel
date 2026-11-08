@@ -2,10 +2,7 @@ import openpyxl as xl
 from openpyxl.chart import BarChart, Reference
 import pathlib
 
-def process_workbook(filename, output = None, discount = 0.9, sheet_name = 'Sheet1'):
-    wb = xl.load_workbook(filename)
-    sheet = wb[sheet_name]
-
+def calculate_discount(sheet, discount):
     for row in range(2, sheet.max_row + 1):
         cell = sheet.cell(row, 3)
         # print(cell.value)
@@ -13,6 +10,7 @@ def process_workbook(filename, output = None, discount = 0.9, sheet_name = 'Shee
         corrected_price_cell = sheet.cell(row, 4)
         corrected_price_cell.value = corrected_price
 
+def add_chart(sheet):
     values = Reference(sheet, min_row = 2, max_row = sheet.max_row,
                         min_col = 4, max_col = 4)
 
@@ -20,6 +18,21 @@ def process_workbook(filename, output = None, discount = 0.9, sheet_name = 'Shee
     chart.add_data(values)
 
     sheet.add_chart(chart, 'e2')
+
+
+def process_workbook(filename, output = None, discount = 0.9, sheet_name = 'Sheet1'):
+    if not pathlib.Path(filename).exists():
+        raise FileNotFoundError(f"File '{filename}' not found.")
+
+    wb = xl.load_workbook(filename)
+
+    if sheet_name not in wb.sheetnames:
+        raise ValueError(f"Sheet '{sheet_name}' not found. Available sheets: {wb.sheetnames}")
+
+    sheet = wb[sheet_name]
+
+    calculate_discount(sheet, discount)
+    add_chart(sheet)
 
     if output is None:
         input_path = pathlib.Path(filename)
@@ -29,6 +42,7 @@ def process_workbook(filename, output = None, discount = 0.9, sheet_name = 'Shee
     wb.save(output)
 
     return output
+
 
 if __name__ == '__main__':
     print(process_workbook('excel.xlsx'))
